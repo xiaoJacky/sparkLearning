@@ -16,7 +16,9 @@ import org.apache.spark.sql._
 import org.apache.spark.sql.sources.{BaseRelation, TableScan}
 import org.apache.spark.sql.types.{DataType, IntegerType, LongType, StringType, StructField, StructType}
 
+import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
+import scala.collection.JavaConversions._
 
 
 object Resolver extends Serializable {
@@ -76,6 +78,26 @@ object Resolver extends Serializable {
     }
     column
   }
+
+  /**
+   * 获取多版本的数据
+   * @param result
+   * @param columnFamily
+   * @param columnName
+   * @param resultType
+   **/
+  def resolveColumnVersion(result: Result, columnFamily: String, columnName: String, resultType: String): mutable.Buffer[(Long, (String, String))] = {
+    val column = result.containsColumn(columnFamily.getBytes, columnName.getBytes) match {
+      case true => {
+        result.getColumnCells(columnFamily.getBytes, columnName.getBytes).map(i => (i.getTimestamp, (columnName, (Bytes.toString(i.getValue)))))
+      }
+      case _ => {
+        null
+      }
+    }
+    column
+  }
+
 }
 
 /**
@@ -94,6 +116,7 @@ case class HBaseRelation(@transient val hbaseProps: Map[String, String])(@transi
   val hbaseTableSchema = hbaseProps.getOrElse("hbase_table_schema", sys.error("not valid schema"))
   val registerTableSchema = hbaseProps.getOrElse("sparksql_table_schema", sys.error("not valid schema"))
   val rowRange = hbaseProps.getOrElse("row_range", "->")
+  val version = hbaseProps.getOrElse("version", "1")
   //get star row and end row
   val range = rowRange.split("->", -1)
   val startRowKey = range(0).trim
@@ -184,6 +207,7 @@ case class HBaseRelation(@transient val hbaseProps: Map[String, String])(@transi
     val properties = SystemConfigTool.initSystemProperties("hbase.properties")
     val hbaseConf = HBaseConfiguration.create()
     hbaseConf.set("hbase.zookeeper.quorum", properties.getProperty("hbase.zookeeper.quorum"))
+    hbaseConf.set("hbase.mapreduce.scan.maxversions", version)
     hbaseConf.set(TableInputFormat.INPUT_TABLE, hbaseTableName)
     hbaseConf.set(TableInputFormat.SCAN_COLUMNS, queryColumns)
     hbaseConf.set(TableInputFormat.SCAN_ROW_START, startRowKey)
@@ -197,13 +221,62 @@ case class HBaseRelation(@transient val hbaseProps: Map[String, String])(@transi
     )
 
 
-    val rs = hbaseRdd.map(tuple => tuple._2).map(result => {
-      var values = new ArrayBuffer[Any]()
-      hbaseTableFields.foreach { field =>
-        values += Resolver.resolve(field, result)
-      }
-      Row.fromSeq(values.toSeq)
+    val rs = hbaseRdd.map(tuple => tuple._2).flatMap(result => {
+
+      val tableFiled = hbaseTableFields.map(i => {
+        val cfColArray = i.fieldName.split(":", -1)
+        val cfName = cfColArray(0)
+        val colName = cfColArray(1)
+        (cfName, colName, i.fieldType)
+      })
+
+      val rowMap = tableFiled.filter(i => {
+        i._1.equals("") && i._2.equals("key")
+      }).apply(0)
+
+      val colMap = tableFiled.filter(i => {
+        ! {
+          i._1.equals("") && i._2.equals("key")
+        }
+      })
+      val fieldMap = colMap.map(i=>(i._2, i._3)).toMap//hbase field map
+
+
+      val key = rowMap._3 match {
+        case "string" => Bytes.toString(result.getRow)
+        case "int" => Bytes.toInt(result.getRow)
+        case "long" => Bytes.toLong(result.getRow)
+        case _ => Bytes.toString(result.getRow)
+      } //row key生成
+
+      colMap.map(i => {
+        Resolver.resolveColumnVersion(result, i._1, i._2, i._3)
+      }).filter(null != _).flatMap(i=>i).groupBy(i=>i._1).map(i=>i._2.map(_._2))
+              .map(i=>{
+        val map = i.toMap
+        val values = new ArrayBuffer[Any]
+        values += key
+        fieldMap.foreach(i=>{
+          val r = i._2 match {
+            case "string" => map.getOrElse(i._1, "")
+            case "int" => map.getOrElse(i._1, "0").toInt
+            case "long" => map.getOrElse(i._1, "0").toFloat
+            case _ => map.getOrElse(i._1, "")
+          }
+          values += r
+        })
+        Row.fromSeq(values.toSeq)
+      })
+
     })
+
+//    val rs = hbaseRdd.map(tuple => tuple._2).map(result => {
+//      var values = new ArrayBuffer[Any]()
+//      hbaseTableFields.foreach { field =>
+//        values += Resolver.resolve(field, result)
+//      }
+//      Row.fromSeq(values.toSeq)
+//    })
     rs
   }
 
