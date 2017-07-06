@@ -5,6 +5,17 @@ package com.learn.spark.types
  */
 object LearnType {
 
+    class Animal {}
+
+    class Bird extends Animal {}
+
+    //协变
+    class Covariant[+T](t: T) {}
+
+    //逆变
+    class Contravariant[-T](t: T) {
+    }
+
     //在Scala当中所有的类型都继承自Any，而所有的类型都被Nothing继承
     trait S[-A, +B] {
         //协变是指把类型参数替换为其父类的能力，即妥协的变化.逆变是指把类型参数替换为其子类的能力，及逆天的变化
@@ -44,5 +55,12 @@ object LearnType {
         })
 
         say(2)
+
+        val cov = new Covariant[Bird](new Bird)
+        val cov2: Covariant[Animal] = cov //斜变
+
+        val c: Contravariant[Animal] = new Contravariant[Animal](new Animal)
+        val c2: Contravariant[Bird] = c
+
     }
 }

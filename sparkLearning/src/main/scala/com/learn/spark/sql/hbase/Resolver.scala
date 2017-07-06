@@ -120,8 +120,8 @@ case class HBaseRelation(@transient val hbaseProps: Map[String, String])(@transi
   val version = hbaseProps.getOrElse("version", "1")
   //get star row and end row
   val range = rowRange.split("->", -1)
-  val startRowKey = range(0).trim
-  val endRowKey = range(1).trim
+  val startRowKey = range(0)
+  val endRowKey = range(1)
 
   val tempHBaseFields = extractHBaseSchema(hbaseTableSchema)
   //do not use this, a temp field
