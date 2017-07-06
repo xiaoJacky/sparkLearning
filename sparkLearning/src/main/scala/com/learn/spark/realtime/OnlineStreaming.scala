@@ -11,7 +11,7 @@ object OnlineStreaming {
 
     @SerialVersionUID(4179549560142368882L)
     class Book(val author: String, val content: String, val id: String,
-                    val time: Long, val title: String) extends Serializable {
+               val time: Long, val title: String) extends Serializable {
         override def hashCode(): Int = {
             id.hashCode
         }
@@ -31,6 +31,12 @@ object OnlineStreaming {
         def stringToBook(): Book = {
             implicit val mf = manifest[Book]
             JsonParser.parseJsonToBean[Book](json)
+        }
+    }
+
+    implicit class BeantoString[A <: AnyRef](a: A) {
+        def toJsonString(): String = {
+            JsonParser.parseBeanToString(a)
         }
     }
 
@@ -69,7 +75,7 @@ object OnlineStreaming {
             rdd =>
                 println("count is: " + rdd.count)
                 rdd.foreachPartition(partition => {
-                    partition.foreach(i=>println("partition: " + i._1))
+                    partition.foreach(i => println("partition foreach data: " + i._1.toJsonString))
                 })
         }
 
@@ -94,6 +100,4 @@ object Config extends Serializable {
     val master = "local[4]"
     val appName = "socketStreaming"
     val batchDuration = Seconds(1)
-
-
 }
