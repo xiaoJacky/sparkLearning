@@ -64,7 +64,7 @@ object OnlineStreaming {
 
         mapStateStream.print
 
-        //stateSnapshots副作用 会有副本并且不清楚
+        //stateSnapshots副作用 会有副本并且不清除
         mapStateStream.stateSnapshots().foreachRDD {
             rdd =>
                 println("count is: " + rdd.count)
