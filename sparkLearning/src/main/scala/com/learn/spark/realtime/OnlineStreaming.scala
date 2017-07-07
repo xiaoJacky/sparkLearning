@@ -36,7 +36,7 @@ object OnlineStreaming {
         }
     }
 
-    implicit class BeantoString[A <: AnyRef](a: A) {
+    implicit class BeanToString[A <: AnyRef](a: A) {
         def toJsonString: String = {
             JsonParser.parseBeanToString(a)
         }
