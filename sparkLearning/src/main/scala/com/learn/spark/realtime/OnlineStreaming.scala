@@ -60,7 +60,6 @@ object OnlineStreaming {
      * @param checkpointDirectory
      */
     def createContext(master: String, appName: String, batchDuration: Duration, checkpointDirectory: String) = {
-        //        val conf = new SparkConf().setAppName(appName)//服务器运行配置
         val conf = new SparkConf().setAppName(appName).setMaster(master).set("spark.driver.host", "localhost") //本地调试配置
         val ssc = new StreamingContext(conf, batchDuration)
         ssc.checkpoint(checkpointDirectory)
