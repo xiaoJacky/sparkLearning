@@ -60,16 +60,18 @@ object OnlineStreaming {
      * @param checkpointDirectory
      */
     def createContext(master: String, appName: String, batchDuration: Duration, checkpointDirectory: String) = {
-        val conf = new SparkConf().setAppName(appName).setMaster(master).set("spark.driver.host", "localhost") //本地调试配置
+        val conf = new SparkConf().setAppName(appName).setMaster(master)
+                .set("spark.driver.host", "localhost") //本地调试配置
         val ssc = new StreamingContext(conf, batchDuration)
         ssc.checkpoint(checkpointDirectory)
 
         val mapStateStream = ssc.socketTextStream("localhost", 9090).map(i => (i.stringToBook, List(i.stringToBook)))
-                .reduceByKey(_ ++ _).mapWithState(StateSpec.function(mappingFunc).initialState(ssc.sparkContext.emptyRDD[(Book, Book)]))
+                .reduceByKey(_ ++ _).mapWithState(StateSpec.function(mappingFunc)
+                .initialState(ssc.sparkContext.emptyRDD[(Book, Book)]))
 
         mapStateStream.print
 
-        //stateSnapshots副作用 会有副本并且不清除
+        //stateSnapshots副作用 会有副本, 所有的rdd进行累加并且不清除 慎用
         mapStateStream.stateSnapshots().foreachRDD {
             rdd =>
                 println("count is: " + rdd.count)
