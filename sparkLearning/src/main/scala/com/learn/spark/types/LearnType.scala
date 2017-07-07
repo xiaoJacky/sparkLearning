@@ -57,10 +57,10 @@ object LearnType {
         say(2)
 
         val cov = new Covariant[Bird](new Bird)
-        val cov2: Covariant[Animal] = cov //斜变
+        val cov2: Covariant[Animal] = cov //协变
 
         val c: Contravariant[Animal] = new Contravariant[Animal](new Animal)
-        val c2: Contravariant[Bird] = c
+        val c2: Contravariant[Bird] = c //逆变
 
     }
 }
