@@ -30,6 +30,12 @@ object LearnType {
         override def A2B(a: String): Int = a.toInt
     }
 
+    //视图绑定
+    class Bird2 {def sing = {}}
+    class Toy {}
+    class Consumer() {
+        def use[T <% Bird2](t: T) = t.sing
+    }
 
     def log[T](list: List[T]): Unit = println(list)
 
@@ -61,6 +67,10 @@ object LearnType {
 
         val c: Contravariant[Animal] = new Contravariant[Animal](new Animal)
         val c2: Contravariant[Bird] = c //逆变
+
+        implicit def toy2Bird(t: Toy) = new Bird2
+        val c3 = new Consumer()
+        c3.use(new Toy)
 
     }
 }
