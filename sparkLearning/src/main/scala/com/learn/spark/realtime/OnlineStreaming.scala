@@ -6,6 +6,8 @@ import org.apache.spark.streaming._
 
 /**
  * Created by xiaojie on 17/7/6.
+ * 用于验证stateSnapshots副本数据是否是执行过程中的所有的rdd累加值
+ * 经验证确实是累加值 慎用
  */
 object OnlineStreaming {
 
@@ -28,14 +30,14 @@ object OnlineStreaming {
 
     //隐式转换
     implicit class JsonToBean(json: String) {
-        def stringToBook(): Book = {
+        def stringToBook: Book = {
             implicit val mf = manifest[Book]
             JsonParser.parseJsonToBean[Book](json)
         }
     }
 
     implicit class BeantoString[A <: AnyRef](a: A) {
-        def toJsonString(): String = {
+        def toJsonString: String = {
             JsonParser.parseBeanToString(a)
         }
     }
@@ -44,7 +46,7 @@ object OnlineStreaming {
 
         val current = one.getOrElse(List[Book]())
 
-        if (!current.isEmpty) {
+        if (current.nonEmpty) {
             val book = current.head
             state.update(book)
         }
@@ -57,6 +59,7 @@ object OnlineStreaming {
      *
      * @param master  spark执行模式
      * @param appName spark appName
+     * @param batchDuration 窗口时间
      * @param checkpointDirectory
      */
     def createContext(master: String, appName: String, batchDuration: Duration, checkpointDirectory: String) = {
@@ -69,7 +72,7 @@ object OnlineStreaming {
                 .reduceByKey(_ ++ _).mapWithState(StateSpec.function(mappingFunc)
                 .initialState(ssc.sparkContext.emptyRDD[(Book, Book)]))
 
-        mapStateStream.print
+        mapStateStream.print(10)
 
         //stateSnapshots副作用 会有副本, 所有的rdd进行累加并且不清除 慎用
         mapStateStream.stateSnapshots().foreachRDD {
