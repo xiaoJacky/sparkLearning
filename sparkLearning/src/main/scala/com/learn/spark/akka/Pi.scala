@@ -12,6 +12,7 @@ case class Work(start: Int, elements: Int) extends PiMessage
 case class Result(value: Double) extends PiMessage
 case class PiApproximation(pi: Double, duration: Long)
 
+
 class Worker extends Actor {
 
     //计算从start开始，连续elements个的和
