@@ -8,7 +8,7 @@ import org.json4s.jackson.Serialization._
 
 case class Book(val author: String, val content: String, val id: String, val time: Long, val title: String)
 case class Person(var map: Map[String, String]){
-    var id: String = _
+    def id: String = map.getOrElse("id", "")
 }
 
 /**
