@@ -4,9 +4,12 @@ import org.json4s.JsonDSL._
 import org.json4s._
 import org.json4s.jackson.JsonMethods._
 import org.json4s.jackson.Serialization
-import org.json4s.jackson.Serialization.write
+import org.json4s.jackson.Serialization._
 
-class Book(val author: String, val content: String, val id: String, val time: Long, val title: String)
+case class Book(val author: String, val content: String, val id: String, val time: Long, val title: String)
+case class Person(var map: Map[String, String]){
+    var id: String = _
+}
 
 /**
  * Created by xiaojie on 17/7/4.
@@ -18,8 +21,8 @@ object JsonParser {
      * @param json
      **/
     def parseJsonToBean[A](json: String)(implicit mf: scala.reflect.Manifest[A]): A = {
-        implicit val formats = DefaultFormats
-        parse(json).extract[A]
+        implicit val formats = Serialization.formats(NoTypeHints)
+        read[A](json)
     }
 
     /**
@@ -44,6 +47,17 @@ object JsonParser {
 
         val string = parseBeanToString(book)
         println(string)
+
+        val map = Map("124" -> "456", "333" -> "789")
+        val person = Person(map)
+        person.id = "1"
+        val personStr = parseBeanToString(person)
+        println(personStr)
+        person.map += ("124" -> "789")
+        println(person)
+
+        println(parseJsonToBean[Person](personStr)(manifest[Person]))
+
 
     }
 
