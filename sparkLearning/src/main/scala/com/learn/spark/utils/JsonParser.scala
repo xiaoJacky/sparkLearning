@@ -50,7 +50,6 @@ object JsonParser {
 
         val map = Map("124" -> "456", "333" -> "789")
         val person = Person(map)
-        person.id = "1"
         val personStr = parseBeanToString(person)
         println(personStr)
         person.map += ("124" -> "789")
