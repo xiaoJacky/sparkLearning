@@ -3,6 +3,8 @@ package com.learn.spark.realtime
 import com.learn.spark.utils.JsonParser
 import org.apache.spark.SparkConf
 import org.apache.spark.streaming._
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 
 /**
  * Created by xiaojie on 17/7/6.
@@ -68,7 +70,15 @@ object OnlineStreaming {
         val ssc = new StreamingContext(conf, batchDuration)
         ssc.checkpoint(checkpointDirectory)
 
-        val mapStateStream = ssc.socketTextStream("localhost", 9090).map(i => (i.stringToBook, List(i.stringToBook)))
+        val mapStateStream = ssc.socketTextStream("localhost", 9090).map(i => {
+            Future{
+                for(i <- (1 to 10)) {
+                    Thread.sleep(8000)
+                    println("process in the future")
+                }
+            }
+            (i.stringToBook, List(i.stringToBook))}
+        )
                 .reduceByKey(_ ++ _).mapWithState(StateSpec.function(mappingFunc)
                 .initialState(ssc.sparkContext.emptyRDD[(Book, Book)]))
 
