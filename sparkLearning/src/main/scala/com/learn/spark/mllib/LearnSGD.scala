@@ -59,7 +59,7 @@ object LearnSGD {
                 error1 = 0
                 for(i <- 0 until m) {
 
-                    val lostFuc = (y(i) - (theta0 + theta1 * x(i)._2 + theta2 * x(i)._3))
+                    val lostFuc = (y(i) - (theta0 * x(i)._1 + theta1 * x(i)._2 + theta2 * x(i)._3))
                     error1 += (Math.pow(lostFuc, 2) / 2)
 
                     if(Math.abs(error1 - error0) < epsilon)
@@ -77,7 +77,7 @@ object LearnSGD {
 
         //对x0中的值进行预测
         val y0 = theta0 * x(0)._1 + theta1 * x(0)._2 + theta2 * x(0)._3
-        println(s"y0=${y(0)} predict value=$y0")
+        println(s"f(x0)=${y(0)} predict value f'(x0)=$y0")
 
     }
 
