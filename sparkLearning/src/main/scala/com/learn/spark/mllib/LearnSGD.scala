@@ -139,7 +139,8 @@ object LearnSGD {
                 val buffer = ListBuffer[Double]()
                 for(it <- 0 until m){
                     val diffVector = xMatrix(r, ::) - xMatrix(it, ::)
-                    val number = norm(diffVector.t) / hh
+                    val number = (diffVector * diffVector.t) / hh
+//                    val number = Math.pow(norm(diffVector.t), 2) / hh
                     buffer += number
                 }
 
@@ -156,17 +157,18 @@ object LearnSGD {
         println("\nt0矩阵：")
         println(t0)
 
-        val r = 0
+        val r = 1
         val buffer = ListBuffer[Double]()
         for(it <- 0 until m){
             val diffVector = xMatrix(r, ::) - xMatrix(it, ::)
-            val number = norm(diffVector.t) / hh
+//            val number = Math.pow(norm(diffVector.t), 2) / hh
+            val number = (diffVector * diffVector.t) / hh
             buffer += number
         }
 
         val ki = exp(DenseMatrix.apply(buffer.toArray))
         val y0 = (ki * t0).asInstanceOf[DenseMatrix[Double]].apply(0,0)
-        println(s"f(x0)=${y(0)} predict value f'(x0)=$y0")
+        println(s"f(x0)=${y(1)} predict value f'(x0)=$y0")
 
     }
 
