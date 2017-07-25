@@ -45,7 +45,7 @@ object Classification {
         //可中断的循环
         val loop = new Breaks
         loop.breakable {
-            while (true){
+            while(true) {
 
                 val r = new Random().nextInt(m)
                 val buffer = ListBuffer[Double]()
@@ -89,6 +89,10 @@ object Classification {
 
     }
 
+    /**
+     * 阶跃函数
+     * @param x
+     * */
     def sign(x: Double): Double = {
         if(x > 0 ){
             1.0
